@@ -1,2 +1,2 @@
-# featurebase-discord-bot
-A bot for Discord
+# community-bot
+A bot for helping our community keep in touch
