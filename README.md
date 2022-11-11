@@ -1,2 +1,2 @@
-# community-bot
-A bot for helping our community keep in touch
+# SlothBot
+A LLM and FeatureBase driven bot for indexing Discord content and conducting interactions with users.
