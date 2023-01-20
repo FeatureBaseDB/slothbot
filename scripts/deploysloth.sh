@@ -6,7 +6,7 @@ NEW_UUID=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 4 ; echo)
 ZONE=$2
 OPTION=$1
 PREEMPTIBLE="--preemptible"
-UBUNTU_VERSION="ubuntu-1804-bionic-v20220118"
+UBUNTU_VERSION="ubuntu-2204-jammy-v20230114"
 IP=""
 
 echo "This instance is preemtible, unless it's started with --prod";
@@ -51,7 +51,7 @@ else
   apt-get update -y
 
   apt-get install unzip -y
-  apt-get install python-pip3
+  apt-get install python3-pip
 
   #entropy
   apt-get -y install rng-tools
