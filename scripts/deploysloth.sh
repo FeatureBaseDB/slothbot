@@ -49,16 +49,19 @@ else
   sudo su -
   date >> /opt/start.time
   apt-get update -y
+
   apt-get install unzip -y
-  
+  apt-get install python-pip3
+
   #entropy
   apt-get -y install rng-tools
   cat "RNGDEVICE=/dev/urandom" >> /etc/default/rng-tools
   /etc/init.d/rng-tools restart
 
-  git clone https://github.com/FeaturebaseDB/slothbot.0.git
+  git clone https://github.com/FeatureBaseDB/slothbot.git
 
   cd slothbot
+  pip3 install -r requirements.txt
 
   # apt-get install apache2-utils -y
   # apt-get install nginx -y
@@ -80,10 +83,10 @@ gcloud compute instances create $NAME-$NEW_UUID \
 --boot-disk-size "100GB" \
 --boot-disk-type "pd-ssd" \
 --boot-disk-device-name "$NEW_UUID" \
---service-account mitta-us@appspot.gserviceaccount.com \
+--service-account slothbot@sloth-compute.iam.gserviceaccount.com \
 --zone $ZONE \
 --labels type=solr \
---tags mitta,solr,token-$TOKEN \
+--tags slothbot,token-$TOKEN \
 $PREEMPTIBLE \
 --subnet=default $IP --network-tier=PREMIUM \
 --metadata startup-script="$SCRIPT"
