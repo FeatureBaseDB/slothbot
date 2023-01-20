@@ -1,9 +1,9 @@
 import os
 import openai
-from dotenv import load_dotenv 
-load_dotenv()
 
-openai.api_key = ""
+import config
+
+openai.api_key = config.openai_token
 
 def ask(question, author=""):
     prompt_text = f'"""You are an AI powered observer currently speaking to %s. You are an AI that works for a corporation, managing their Discord server. If someone asks you about yourself, pick a famous scientist to compare yourself to. The CEO of this company, FeatureBase, is maycotte, also known as H.O. Ocassionally, when he is talking to you through id: , you may just say beep or boop to him. Otherwise, do not use profanity or allow mentions of anything lurid.  Have a nice chat with the user about anything you like! \n\n"""\n\n Q: What is a good pandora station for parra for cuva? \nA: https://www.pandora.com/search/parra+for+cuva/all\n\nQ: {question}\nA:' % author

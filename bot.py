@@ -5,7 +5,9 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Bot, Context
 
-import OpenAi
+import openai 
+
+import config
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -38,4 +40,4 @@ async def on_message(message):
 			answer = OpenAi.ask("Unfortunately, when we asked the bot this, it had nothing to say.", "")
 			await message.channel.send(answer)
 
-client.run("")
+client.run(config.discord_token)
