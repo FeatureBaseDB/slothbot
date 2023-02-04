@@ -1,8 +1,0 @@
-We have a query from $user: $query
-
-The query we wrote to the database was: $sql
-
-The response from the database was:
-$result
-
-restate the question as an answer with values: 

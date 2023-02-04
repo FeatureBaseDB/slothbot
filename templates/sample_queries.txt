@@ -1,6 +1,0 @@
--- how do I do the insert into that column
-insert into foo (_id, thing) values (1, ...?), (2, ...?)
-
--- do do I query it? and what do I get back?
-select _id, thing from foo; -- > ???
-

@@ -22,7 +22,7 @@ def ai(model_name="none", document={}):
 		# rewrite to match document flow
 		document['error'] = "model %s errors with no token." % (model_name)
 		document['explain'] = "I encountered an error talking with OpenAI."
-		document.pop('template_file', None)
+		document['template_file'] = "eject_document"
 		return document
 	else:
 		# set token for model to use
@@ -39,7 +39,7 @@ def ai(model_name="none", document={}):
 
 		document['error'] = "model %s errors with no token." % (model_name)
 		document['explain'] = "I encountered an error talking with my AI handler."
-		document.pop('template_file', None)
+		document['template_file'] = "eject_document"
 		return document
 
 
@@ -61,13 +61,15 @@ def load_template(name="default"):
 		template = None
 
 	return template
-	
+
+
 # gpt3 dense vectors
 def gpt3_embedding(content, engine='text-similarity-ada-001'):
 	content = content.encode(encoding='ASCII',errors='ignore').decode()
 	response = openai.Embedding.create(input=content,engine=engine)
 	vector = response['data'][0]['embedding']  # this is a normal list
 	return vector
+
 
 # completion
 def gpt3_completion(prompt, temperature=0.95, max_tokens=256, top_p=1, fp=0, pp=0):
@@ -93,19 +95,43 @@ def gpt3_completion(prompt, temperature=0.95, max_tokens=256, top_p=1, fp=0, pp=
 # model functions
 # ===============
 
-# reboot noises
+# dream an image
 @model
-def reboot(document, template_file="reboot"):
+def dream(document):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+	
+	response = openai.Image.create(
+	    prompt=document.get('plain').strip("dream "),
+	    n=1,
+	    size="256x256",
+	)
+
+	url = response["data"][0]["url"]
+	
+	return url
+
+
+# not in use
+@model
+def help(document, template_file="help"):
 	# load openai key then drop it from the document
 	openai.api_key = document.get('openai_token')
 	document.pop('openai_token', None)
 
 	template = load_template(template_file)
-	prompt = template.substitute()
 
-	document['answer'] = "Rebooting...%s" % gpt3_completion(prompt, temperature=0.45, max_tokens=30).strip("\n")
+	# no substitutions for this template, yet
+	prompt = template.substitute(document)
+
+	document['explain'] = gpt3_completion(prompt, temperature=0.85, max_tokens=256).strip("\n")
 	return document
 
+
+# uses templates in templates directory
+# set template using document key "template_file"
+# use of "eject_document" will force a reply to Discord
 @model
 def query(document):
 	# load openai key then drop it from the document
@@ -113,33 +139,41 @@ def query(document):
 	document.pop('openai_token', None)
 
 	# get the template file to use
-	template_file = document.get('template_file', "first_pass")
+	template_file = document.get('template_file', "determine_intent")
 
 	# random number for ids
 	document['random'] = int(random.random()*1000000000)
 	
-	print(document)
 	# substitute things
 	template = load_template(template_file)
 	prompt = template.substitute(document)
-	print(prompt)
+
 	# ask GPT-3 for an answer
 	answer = gpt3_completion(prompt)
-	print(answer)
+
+	# try to eval the result
 	try:
+		# prepend the completion with a dictionary {
 		answer_dict = eval('{%s' % (answer.strip("\n").strip(" ").replace("\n", "")))
 		document = {**document, **answer_dict}
+
+	# we failed to eval
 	except Exception as ex:
 		# bad sql
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		print("=============EVAL==============")
 		print(exc_type, exc_obj, exc_tb)
+		print(ex)
+		print(answer)
 		print("===============================")
-		document['explain'] = "I had problems returning a response. %s" % ex
+		document['explain'] = "I had problems returning a valid response."
 		document['is_sql'] = False
+		document['template_file'] = "eject_document"
 
 	return document
 
+
+# not in use, yet
 @model
 def feedback(document, template_file="sql_feedback"):
 	openai.api_key = document.get('openai_token')
@@ -167,23 +201,3 @@ def feedback(document, template_file="sql_feedback"):
 		answer_dict = {"explain": "I had problems building a response.", "is_sql": "False"}
 
 	return answer_dict
-
-@model
-def response(document, template_file="response"):
-	openai.api_key = document.get('openai_token')
-
-	prompt_data = {
-		"plain": document.get('plain'),
-		"author": document.get('author'),
-		"result": document.get('result'),
-		"sql": document.get('sql')
-	}
-
-
-	template = load_template(template_file)
-	prompt = template.substitute(prompt_data)
-	print(prompt)
-	answer = gpt3_completion(prompt)
-	print(answer)
-
-	return answer

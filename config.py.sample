@@ -1,0 +1,10 @@
+# config for slothbot
+dev = "True"
+
+# Tokens
+discord_token = ""
+openai_token = ""
+
+# URIs
+weaviate_url = "http://localhost:8080"
+featurebase_url = "http://localhost:10101"
