@@ -1,0 +1,5 @@
+# requirements
+discord==1.7.3
+openai==0.26.1
+prettytable==3.6.0
+weaviate-client==3.11.0
