@@ -201,18 +201,16 @@ async def on_message(message):
 		if document.get('template_file', "eject_document") == "eject_document":
 
 			if document.get('use_sql') and document.get('table_to_use'):
-				await message.channel.send("Ejecting document from the query pipeline. Use the :thumbsup: emoji to continue, or reply in a thread below to inject SQL.")
+				await message.channel.send("Use the :thumbsup: emoji or reply in thread below to execute SQL.")
 
 				if document.get('chart_type'):
 					await message.channel.send("Would use the *%s* database projected to a %s." % (document.get('table_to_use'), document.get('chart_type')))
 				else:
 					await message.channel.send("Would use the *%s* database to run a query." % (document.get('table_to_use')))
-			else:
-				await message.channel.send("Ejecting document from the query pipeline.")
 
 			await message.channel.send(document.get("explain"))
-			print(document)
 
+			# create a history document and send to weaviate
 			history_document = {
 				"author": document.get('author'),
 				"plain": document.get('plain'),
@@ -223,7 +221,6 @@ async def on_message(message):
 				"type_of_chart": document.get('type_of_chart')				
 			} 
 			data_uuid = weaviate_update(history_document, "History")
-			print(data_uuid)
 
 		else:
 			await message.channel.send(document.get("explain"))
