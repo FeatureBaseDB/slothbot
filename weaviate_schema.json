@@ -1,8 +1,8 @@
 {
     "classes": [
         {
-            "class": "History",
-            "description": "History index.",
+            "class": "Intent",
+            "description": "Intent index.",
             "vectorIndexConfig": {
                 "vectorCacheMaxObjects": 100000,
                 "ef": 2500
@@ -56,24 +56,10 @@
                 },
                 {
                     "dataType": [
-                        "boolean"
-                    ],
-                    "description": "Whether or not a SQL statement can be written from the plain query.",
-                    "name": "use_sql"
-                },
-                {
-                    "dataType": [
-                        "boolean"
-                    ],
-                    "description": "Whether or not a SQL statement can be written from the plain query.",
-                    "name": "use_chart"
-                },
-                {
-                    "dataType": [
                         "string"
                     ],
-                    "description": "Table to query.",
-                    "name": "table_to_use",
+                    "description": "Possible SQL query to run.",
+                    "name": "sql",
                     "moduleConfig": {
                         "text2vec-openai": {
                             "skip": false,
@@ -85,8 +71,21 @@
                     "dataType": [
                         "string"
                     ],
-                    "description": "Type of chart.",
-                    "name": "chart_type",
+                    "description": "Table to query.",
+                    "name": "table",
+                    "moduleConfig": {
+                        "text2vec-openai": {
+                            "skip": false,
+                            "vectorizePropertyName": false
+                        }
+                    }
+                },
+                {
+                    "dataType": [
+                        "string"
+                    ],
+                    "description": "Display type. One of ['text', 'bar_chart', 'pie_chart', 'table']",
+                    "name": "display_type",
                     "moduleConfig": {
                         "text2vec-openai": {
                             "skip": false,

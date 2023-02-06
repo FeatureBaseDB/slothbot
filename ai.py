@@ -8,6 +8,8 @@ import traceback
 
 from string import Template
 
+from database import weaviate_query
+
 import config
 
 # AI model call by method name
@@ -143,7 +145,24 @@ def query(document):
 
 	# random number for ids
 	document['random'] = int(random.random()*1000000000)
+	for distance in range(0, 10):
+		intents = weaviate_query({"concepts": [document.get('plain')]}, "Intent", float(distance/10))
+
+		if len(intents) > 3:
+			break
 	
+	print("==============")
+	print(intents)
+	print("==============")
+
+	_intents = []
+	for intent in intents:
+		intent.pop('_additional')
+		_intents.append(intent)
+
+
+	document['intents'] = _intents
+
 	# substitute things
 	template = load_template(template_file)
 	prompt = template.substitute(document)
@@ -166,7 +185,11 @@ def query(document):
 		print(ex)
 		print(answer)
 		print("===============================")
-		document['explain'] = "I had problems returning a valid response."
+		if not document.get('explain', None):
+			document['explain'] = "I had problems returning a valid response."
+
+		document['error'] = ex
+	
 		document['is_sql'] = False
 		document['template_file'] = "eject_document"
 
@@ -189,10 +212,9 @@ def feedback(document, template_file="sql_feedback"):
 
 	template = load_template(template_file)
 	prompt = template.substitute(prompt_data)
-	print(prompt)
 
 	answer = gpt3_completion(prompt)
-	print(answer)
+
 	try:
 		answer_dict = eval('{%s' % (answer.strip("\n").strip(" ")))
 	except:
