@@ -12,13 +12,13 @@ client = weaviate.Client(
 )
 
 
-# all_objects = client.data_object.get(class_name="Intent")
-# print(all_objects)
+#all_objects = client.data_object.get(class_name="Intent")
+#print(all_objects)
 
 for distance in range(0, 10):
 	intents = weaviate_query({"concepts": "planets"}, "Intent", float(distance/10))
 
-	if len(intents) > 3:
+	if len(intents) > 6:
 		break
 
 pp = pprint.PrettyPrinter(indent=4)

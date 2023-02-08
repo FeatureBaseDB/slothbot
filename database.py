@@ -117,6 +117,9 @@ def featurebase_tables_string(table_name=None):
 # "sql" key in document should have a valid query
 def featurebase_query(document):
 	# try to run the query
+	print("USING QUERY")
+	print(document.get('sql'))
+	print("USING QUERY")
 	try:
 		query = document.get("sql")
 		result = requests.post(
@@ -124,22 +127,24 @@ def featurebase_query(document):
 			data=query.encode('utf-8'),
 			headers={'Content-Type': 'text/plain'}
 		).json()
+		print(result.get('data'))
 	except Exception as ex:
 		# bad query?
 		exc_type, exc_obj, exc_tb = sys.exc_info()
+		print("=============")
 		print(exc_type, exc_obj, exc_tb)
-		
+		print("=============")
 		document['explain'] = "(╯°□°)╯︵ ┻━┻"
 		document['error'] = "%s: %s" % (exc_tb.tb_lineno, ex)
 		document.pop('template_file', None)
-		document['is_sql'] = 'False'
+
 		return document
 
 	if result.get('error', ""):
 		# featurebase reports and error
 		document['explain'] = "Error returned by FeatureBase: %s" % result.get('error')
 		document['error'] = result.get('error')
-		document['is_sql'] = 'False'
+		document['data'] = result.get('data')
 		document['template_file'] = "handle_error"
 
 	elif result.get('data', []):

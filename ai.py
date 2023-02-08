@@ -148,27 +148,25 @@ def query(document):
 	for distance in range(0, 10):
 		intents = weaviate_query({"concepts": [document.get('plain')]}, "Intent", float(distance/10))
 
-		if len(intents) > 3:
+		if len(intents) > 5:
 			break
-	
-	print("==============")
-	print(intents)
-	print("==============")
 
 	_intents = []
 	for intent in intents:
 		intent.pop('_additional')
 		_intents.append(intent)
 
-
 	document['intents'] = _intents
 
 	# substitute things
 	template = load_template(template_file)
 	prompt = template.substitute(document)
-
+	print("===================")
+	print(prompt)
 	# ask GPT-3 for an answer
 	answer = gpt3_completion(prompt)
+	print(answer)
+	print("===================")
 
 	# try to eval the result
 	try:

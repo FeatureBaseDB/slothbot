@@ -227,55 +227,42 @@ async def on_message(message):
 		document = {
 			"plain": message.content,
 			"author": message.author.name,
-			# replace this with a weaviate query
-			# "history": history_thing
+			"tables_schema": featurebase_tables_schema(),
 			"tables": featurebase_tables_string(),
 		}
 
 		# retreive document results from AI
 		document = ai("query", document)
 
-		if document.get('template_file', "eject_document") == "eject_document":
 
-			"""
-			if document.get('sql') and document.get('table_to_use'):
-				await message.channel.send("Use the :thumbsup: emoji or reply in thread below to execute SQL.")
+		await message.channel.send(document.get("explain"))
 
-				if document.get('chart_type'):
-					await message.channel.send("Would use the *%s* database projected to a %s." % (document.get('table_to_use'), document.get('chart_type')))
-				else:
-					await message.channel.send("Would use the *%s* database to run a query." % (document.get('table_to_use')))
-			"""
-			await message.channel.send(document.get("explain"))
-
-			if document.get("sql"):
-				document = featurebase_query(document)
-				
-				if document.get('error', False):
-					await message.channel.send("Got an answer, but no data.")
-				elif document.get('data', []):
-					await message.channel.send(document.get('data'))
+		print(document)
+		if document.get("sql") and document.get('table'):
+			document = featurebase_query(document)
+			print("return from featurebase")
+			print(document)
+			if document.get('error', False):
+				await message.channel.send("Got an answer, but no data.")
+				await message.channel.send(document.get("explain"))
+				await message.channel.send(document.get("error"))
+			elif document.get('data', []):
+				await message.channel.send(document.get('data'))
 
 
-			# create a history document and send to weaviate
-			intent = {
-				"author": document.get('author'),
-				"plain": document.get('plain'),
-				"explain": document.get('explain'),
-				"sql": document.get('sql'),
-				"table": document.get('table'),
-				"display_type": document.get('display_type')				
-			}
+		# create a history document and send to weaviate
+		intent = {
+			"author": document.get('author'),
+			"plain": document.get('plain'),
+			"explain": document.get('explain'),
+			"sql": document.get('sql'),
+			"table": document.get('table'),
+			"display_type": document.get('display_type')				
+		}
 
-			data_uuid = weaviate_update(intent, "Intent")
-			await message.channel.send("Document inserted into Weaviate with uuid: %s" % data_uuid)
+		data_uuid = weaviate_update(intent, "Intent")
+		await message.channel.send("Document inserted into Weaviate with uuid: %s" % data_uuid)
 
-		else:
-			await message.channel.send("Document was not ejected.")
-			if document.get('template_file', ""):
-				await message.channel.send(document.get("template_file"))
-	
-			await message.channel.send(document.get("explain"))
 
 	return
 

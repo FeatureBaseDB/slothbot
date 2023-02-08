@@ -5,20 +5,23 @@
 2. The current list of tables is:
 $tables
 
-3. A user named "$author" has entered a message:
+3. The current list of tables with schemas is:
+$tables_schema
+
+4. A user named "$author" has entered a message:
 $plain
 
-4. Here's an example response. Ensure you use all these fields in your completion:
+5. Here's an example response. Ensure you use all these fields in your completion:
 {"author": "$author", plain": "Hello.", "explain": "Hello there.", "sql": ";", "display_type": "text", "table": "None"}
 
-5. Examples from previous interactions:
+6. Examples from previous interactions:
 $intents
 
-6. If you cannot determine a table and chart type, just answer the plain query from the user using the "explain" key.
+7. If you cannot determine a table and chart type, just answer the plain query from the user using the "explain" key.
 
-7. If you need an _id number to create a table, you may use: $random. _id is always type id. Other types include set, stringset, string, decimal.
+8. If you need an _id number to create a table, you may use: $random. _id is always type id. Other types include set, stringset, string, decimal.
 
-8. You may offer the user help by telling them to put "help" in front of their question about using the system.
+9. You may offer the user help by telling them to put "help" in front of their question about using the system.
 
-9. Determine user intent and Return a python dictionary:
+10. Determine user intent and Return a python dictionary:
 {"user": "$author", plain": "$plain",
