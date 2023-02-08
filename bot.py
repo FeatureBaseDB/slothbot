@@ -13,7 +13,7 @@ import config
 
 from ai import ai
 from database import featurebase_tables_schema, featurebase_tables_string, featurebase_query
-from database import weaviate_update, weaviate_query
+from database import weaviate_update, weaviate_query, weaviate_delete
 
 import weaviate
 
@@ -28,7 +28,7 @@ def random_string(size=6, chars=string.ascii_letters + string.digits):
 
 # discord intents
 intents = discord.Intents.default()
-# intents.message_content = True
+intents.message_content = True
 client = discord.Client(intents=intents)
 
 # discord log
@@ -47,22 +47,22 @@ async def on_ready():
 	# show reboot of bot
 	channel = client.get_channel(1067446497253265410)
 
-	# test FeatureBase connection
-	_tables = featurebase_tables_string()
+	# # test FeatureBase connection
+	# _tables = featurebase_tables_string()
 
 	await channel.send("-")
 
-	if not _tables:
-		await channel.send("Couldn't query FeatureBase for tables.")
-	else:
-		await channel.send("%s tables availabe via FeatureBase: %s" % (len(_tables.split(",")), _tables))
+	# if not _tables:
+	# 	await channel.send("Couldn't query FeatureBase for tables.")
+	# else:
+	# 	await channel.send("%s tables availabe via FeatureBase: %s" % (len(_tables.split(",")), _tables))
 
 	# connect to weaviate and ensure schema exists
 	try:
 		weaviate_client = weaviate.Client("http://localhost:8080")
 
 		# Need to reset Weaviate?
-		# weaviate_client.schema.delete_all()
+		weaviate_client.schema.delete_all()
 
 		# make schemas if none found
 		if not weaviate_client.schema.contains():
@@ -85,12 +85,16 @@ async def on_ready():
 async def on_reaction_add(reaction, user):
 	channel = client.get_channel(reaction.message.channel.id)
 	if reaction.message.channel.id == 1067446497253265410:
+		if "uuid:" in reaction.message.content:
+			uuid = reaction.message.content.split("uuid: ")[1]
+			weaviate_delete(uuid, "Intent")
+			await channel.send("Deleted document %s from Weaviate." % uuid)
+			return
+
 		await channel.send("Standby...running query.")
 
 		document = {"concepts": [reaction.message.content]}
-		result = weaviate_query(document, "History", 0.2)
-
-		print(result)
+		result = weaviate_query(document, "Intent", 0.2)
 
 		# refactor
 		# run until we get SQL, or an explaination/answer
@@ -112,13 +116,13 @@ async def on_reaction_add(reaction, user):
 					pretty_table.add_row(entry)
 
 				table_string = "```\n%s\n```" % pretty_table
-				await message.channel.send(document.get('explain'))
-				await message.channel.send(document.get('sql'))
-				await message.channel.send(table_string)
+				await channel.send(document.get('explain'))
+				await channel.send(document.get('sql'))
+				await channel.send(table_string)
 
 			else:
-				await message.channel.send("It goes without saying, we have to be here.")
-				await message.channel.send(document.get('explain'))
+				await channel.send("It goes without saying, we have to be here.")
+				await channel.send(document.get('explain'))
 
 	return
 
@@ -132,6 +136,22 @@ async def on_message(message):
 	if message.author == client.user:
 		return
 
+	print(message)
+	if message.content.lower().startswith("support "):
+		# create document
+		document = {
+			"plain": message.content,
+			"author": message.author.name
+		}
+  
+		url = ai("support", document)
+		await message.channel.send(document.get('explain'))
+
+		weaviate_update(document, "Support")
+  
+		return
+
+
 	# stop bot from interactions in most channels
 	# use #offtopic and #bot-dev only
 	# allows op to interact everywhere
@@ -140,6 +160,36 @@ async def on_message(message):
 			if message.author.name != "Kord" and message.author != client.user:
 				await message.channel.send("Sorry %s, I can't work in here. See the #bot-dev channel!" % message.author.name)
 				return
+
+	if message.content.lower().startswith("delete ") and message.author.name == "Kord":
+		uuid = message.content.split(" ")[1]
+		weaviate_delete(uuid, "Intent")
+		await message.channel.send("Deleted document %s from Weaviate." % uuid)
+		return
+
+	# test message content for json
+	try:
+		document = json.loads(message.content)
+		if document.get('sql', False):
+			use_sql = True
+		else:
+			use_sql = False
+
+		if document.get('type_of_chart', False):
+			use_chart = True
+		else:
+			use_chart = False
+
+		intent_document = {
+			"author": document.get('author'),
+			"plain": document.get('plain'),
+			"explain": document.get('explain')				
+		} 
+		data_uuid = weaviate_update(intent_document, "Support")
+		await message.channel.send("Document inserted into Weaviate with uuid: %s" % data_uuid)
+
+	except:
+		pass
 
 	# who wants dallE?
 	# creates images from a prompt
@@ -190,43 +240,41 @@ async def on_message(message):
 		document = {
 			"plain": message.content,
 			"author": message.author.name,
-			# replace this with a weaviate query
-			# "history": history_thing
+			"tables_schema": featurebase_tables_schema(),
 			"tables": featurebase_tables_string(),
 		}
 
 		# retreive document results from AI
 		document = ai("query", document)
 
-		if document.get('template_file', "eject_document") == "eject_document":
 
-			if document.get('use_sql') and document.get('table_to_use'):
-				await message.channel.send("Ejecting document from the query pipeline. Use the :thumbsup: emoji to continue, or reply in a thread below to inject SQL.")
+		await message.channel.send(document.get("explain"))
 
-				if document.get('chart_type'):
-					await message.channel.send("Would use the *%s* database projected to a %s." % (document.get('table_to_use'), document.get('chart_type')))
-				else:
-					await message.channel.send("Would use the *%s* database to run a query." % (document.get('table_to_use')))
-			else:
-				await message.channel.send("Ejecting document from the query pipeline.")
+		print(document)
+		if document.get("sql") and document.get('table'):
+			document = featurebase_query(document)
 
-			await message.channel.send(document.get("explain"))
-			print(document)
+			if document.get('error', False):
+				await message.channel.send("Got an answer, but no data.")
+				await message.channel.send(document.get("explain"))
+				await message.channel.send(document.get("error"))
+			elif document.get('data', []):
+				await message.channel.send(document.get('data'))
 
-			history_document = {
-				"author": document.get('author'),
-				"plain": document.get('plain'),
-				"explain": document.get('explain'),
-				"use_sql": document.get('use_sql'),
-				"use_chart": document.get('use_chart'),
-				"table_to_use": document.get('table_to_use'),
-				"type_of_chart": document.get('type_of_chart')				
-			} 
-			data_uuid = weaviate_update(history_document, "History")
-			print(data_uuid)
 
-		else:
-			await message.channel.send(document.get("explain"))
+		# create a history document and send to weaviate
+		intent = {
+			"author": document.get('author'),
+			"plain": document.get('plain'),
+			"explain": document.get('explain'),
+			"sql": document.get('sql'),
+			"table": document.get('table'),
+			"display_type": document.get('display_type')				
+		}
+
+		data_uuid = weaviate_update(intent, "Intent")
+		await message.channel.send("Document inserted into Weaviate with uuid: %s" % data_uuid)
+
 
 	return
 

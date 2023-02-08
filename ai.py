@@ -8,6 +8,8 @@ import traceback
 
 from string import Template
 
+from database import weaviate_query
+
 import config
 
 # AI model call by method name
@@ -128,6 +130,36 @@ def help(document, template_file="help"):
 	document['explain'] = gpt3_completion(prompt, temperature=0.85, max_tokens=256).strip("\n")
 	return document
 
+@model
+def support(document, template_file="support"):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+
+	# call weaviate with document.plain
+	for distance in range(0, 10):
+		intents = weaviate_query({"concepts": document.get('plain')}, "Support", float(distance / 10.0))
+		if len(intents) > 6:
+			break
+
+	_intents = []
+	for intent in intents:
+		intent.pop('_additional')
+		_intents.append(intent)
+
+	# print(_intents)
+	# document['intents'] = _intents
+ 
+	# print(document)
+
+	template = load_template(template_file)
+	prompt = template.substitute({"author": document.get('author'), "plain": document.get('plain'), "intents": _intents})
+
+	# print(prompt)
+
+	document['explain'] = gpt3_completion(prompt, temperature=0.85, max_tokens=256).strip("\n")
+	return document
+
 
 # uses templates in templates directory
 # set template using document key "template_file"
@@ -143,7 +175,19 @@ def query(document):
 
 	# random number for ids
 	document['random'] = int(random.random()*1000000000)
-	
+	for distance in range(0, 10):
+		intents = weaviate_query({"concepts": [document.get('plain')]}, "Intent", float(distance/10))
+
+		if len(intents) > 5:
+			break
+
+	_intents = []
+	for intent in intents:
+		intent.pop('_additional')
+		_intents.append(intent)
+
+	document['intents'] = _intents
+
 	# substitute things
 	template = load_template(template_file)
 	prompt = template.substitute(document)
@@ -166,7 +210,11 @@ def query(document):
 		print(ex)
 		print(answer)
 		print("===============================")
-		document['explain'] = "I had problems returning a valid response."
+		if not document.get('explain', None):
+			document['explain'] = "I had problems returning a valid response."
+
+		document['error'] = ex
+	
 		document['is_sql'] = False
 		document['template_file'] = "eject_document"
 
@@ -189,10 +237,9 @@ def feedback(document, template_file="sql_feedback"):
 
 	template = load_template(template_file)
 	prompt = template.substitute(prompt_data)
-	print(prompt)
 
 	answer = gpt3_completion(prompt)
-	print(answer)
+
 	try:
 		answer_dict = eval('{%s' % (answer.strip("\n").strip(" ")))
 	except:

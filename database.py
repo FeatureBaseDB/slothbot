@@ -117,30 +117,34 @@ def featurebase_tables_string(table_name=None):
 # "sql" key in document should have a valid query
 def featurebase_query(document):
 	# try to run the query
+	print("USING QUERY")
+	print(document.get('sql'))
+	print("USING QUERY")
 	try:
 		query = document.get("sql")
 		result = requests.post(
-			url,
+			config.featurebase_url+"/sql",
 			data=query.encode('utf-8'),
 			headers={'Content-Type': 'text/plain'}
 		).json()
-		print(result)
+		print(result.get('data'))
 	except Exception as ex:
 		# bad query?
 		exc_type, exc_obj, exc_tb = sys.exc_info()
+		print("=============")
 		print(exc_type, exc_obj, exc_tb)
-		
+		print("=============")
 		document['explain'] = "(╯°□°)╯︵ ┻━┻"
 		document['error'] = "%s: %s" % (exc_tb.tb_lineno, ex)
 		document.pop('template_file', None)
-		document['is_sql'] = 'False'
+
 		return document
 
 	if result.get('error', ""):
 		# featurebase reports and error
 		document['explain'] = "Error returned by FeatureBase: %s" % result.get('error')
 		document['error'] = result.get('error')
-		document['is_sql'] = 'False'
+		document['data'] = result.get('data')
 		document['template_file'] = "handle_error"
 
 	elif result.get('data', []):
@@ -149,10 +153,7 @@ def featurebase_query(document):
 		document['template_file'] = "process_response"
 	
 	else:
-		print(result)
-		document['error'] = "No useful information was returned."
-		document['is_sql'] = 'False'
-		document['explain'] = "(╯°□°)╯︵ ┻━┻"
+		document['explain'] = "Query was successful, but returned no data."
 		document['template_file'] = "eject_document" # forces the document flow to stop
 	
 	return document
@@ -174,19 +175,22 @@ def weaviate_query(document, collection, distance=0.5):
 	# fetch result and fields
 	result = (
 	  weaviate_client.query
-	  .get(collection, ["plain","author", "explain","chart_type","table_to_use"])
+	  .get(collection, ["plain", "author", "explain"])
 	  .with_additional(["certainty", "distance", "id"])
 	  .with_near_text(nearText)
 	  .do()
 	)
 
-	for record in result.get('data').get('Get').get(collection):
-		print(record.get('_additional').get('certainty'), "|", record.get('_additional').get('distance'), "|", record.get('table'), "|", record.get('sql'))
+	_records = []
 
-	return
+	for record in result.get('data').get('Get').get(collection):
+		_records.append(record)
+
+	return _records
 
 # send a document to a class/collection
 def weaviate_update(document, collection):
+	print(document, collection)
 	try:
 		data_uuid = weaviate_client.data_object.create(document, collection)
 
@@ -195,4 +199,12 @@ def weaviate_update(document, collection):
 		data_uuid = False
 
 	return data_uuid
+
+def weaviate_delete(uuid, collection):
+	try:
+		weaviate_client.data_object.delete(uuid, collection)
+	except Exception as ex:
+		print(ex)
+
+	return
 

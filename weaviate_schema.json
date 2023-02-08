@@ -1,8 +1,8 @@
 {
     "classes": [
         {
-            "class": "History",
-            "description": "History index.",
+            "class": "Support",
+            "description": "Intent index.",
             "vectorIndexConfig": {
                 "vectorCacheMaxObjects": 100000,
                 "ef": 2500
@@ -45,130 +45,8 @@
                     "dataType": [
                         "string"
                     ],
-                    "description": "GPT-3 explaination of query.",
+                    "description": "bot response",
                     "name": "explain",
-                    "moduleConfig": {
-                        "text2vec-openai": {
-                            "skip": false,
-                            "vectorizePropertyName": false
-                        }
-                    }
-                },
-                {
-                    "dataType": [
-                        "boolean"
-                    ],
-                    "description": "Whether or not a SQL statement can be written from the plain query.",
-                    "name": "use_sql"
-                },
-                {
-                    "dataType": [
-                        "boolean"
-                    ],
-                    "description": "Whether or not a SQL statement can be written from the plain query.",
-                    "name": "use_chart"
-                },
-                {
-                    "dataType": [
-                        "string"
-                    ],
-                    "description": "Table to query.",
-                    "name": "table_to_use",
-                    "moduleConfig": {
-                        "text2vec-openai": {
-                            "skip": false,
-                            "vectorizePropertyName": false
-                        }
-                    }
-                },
-                {
-                    "dataType": [
-                        "string"
-                    ],
-                    "description": "Type of chart.",
-                    "name": "chart_type",
-                    "moduleConfig": {
-                        "text2vec-openai": {
-                            "skip": false,
-                            "vectorizePropertyName": false
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "class": "SQL",
-            "description": "SQL index.",
-            "vectorIndexConfig": {
-                "vectorCacheMaxObjects": 100000,
-                "ef": 2500
-            },
-            "moduleConfig": {
-                "text2vec-openai": {
-                    "model": "ada",
-                    "modelVersion": "002",
-                    "type": "text"
-                }
-            },
-            "properties": [
-                {
-                    "dataType": [
-                        "string"
-                    ],
-                    "description": "User's name.",
-                    "name": "author",
-                    "moduleConfig": {
-                        "text2vec-openai": {
-                            "skip": false,
-                            "vectorizePropertyName": false
-                        }
-                    }
-                },
-                {
-                    "dataType": [
-                        "string"
-                    ],
-                    "description": "User's plain request.",
-                    "name": "plain",
-                    "moduleConfig": {
-                        "text2vec-openai": {
-                            "skip": false,
-                            "vectorizePropertyName": false
-                        }
-                    }
-                },
-                {
-                    "dataType": [
-                        "string"
-                    ],
-                    "description": "GPT-3 explaination of query.",
-                    "name": "explain",
-                    "moduleConfig": {
-                        "text2vec-openai": {
-                            "skip": false,
-                            "vectorizePropertyName": false
-                        }
-                    }
-                },
-                {
-                    "dataType": [
-                        "string"
-                    ],
-                    "description": "SQL query, if any.",
-                    "name": "sql",
-                    "moduleConfig": {
-                        "text2vec-openai": {
-                            "skip": false,
-                            "vectorizePropertyName": false
-                        }
-                    }
-                },
-                {
-                    "dataType": [
-                        "string"
-                    ],
-                    "description": "Table to query.",
-                    "name": "table",
                     "moduleConfig": {
                         "text2vec-openai": {
                             "skip": false,

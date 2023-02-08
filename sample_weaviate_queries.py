@@ -1,5 +1,6 @@
 import weaviate
 import config
+import pprint
 
 from database import weaviate_query
 
@@ -11,12 +12,17 @@ client = weaviate.Client(
 )
 
 
-all_objects = client.data_object.get(class_name="History")
+all_objects = client.data_object.get(class_name="Support")
 print(all_objects)
 
+# for distance in range(0, 10):
+intents = weaviate_query({"concepts": "hello"}, "Support", float(0.8))
 
-result = weaviate_query({"concepts": "select all from planets"}, "History", 0.3)
-print(result)
+	# if len(intents) > 6:
+# break
+
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint(intents)
 
 """
 for doc in documents:
