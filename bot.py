@@ -240,8 +240,7 @@ async def on_message(message):
 		print(document)
 		if document.get("sql") and document.get('table'):
 			document = featurebase_query(document)
-			print("return from featurebase")
-			print(document)
+
 			if document.get('error', False):
 				await message.channel.send("Got an answer, but no data.")
 				await message.channel.send(document.get("explain"))

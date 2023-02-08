@@ -161,12 +161,9 @@ def query(document):
 	# substitute things
 	template = load_template(template_file)
 	prompt = template.substitute(document)
-	print("===================")
-	print(prompt)
+
 	# ask GPT-3 for an answer
 	answer = gpt3_completion(prompt)
-	print(answer)
-	print("===================")
 
 	# try to eval the result
 	try:
