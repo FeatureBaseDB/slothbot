@@ -1,0 +1,7 @@
+1. A user named $author has entered the following help prompt:
+$plain
+
+2. Here are some messages that may be related to what the user is asking about:
+$intents
+
+3. Your suggestion to $author:

@@ -130,6 +130,36 @@ def help(document, template_file="help"):
 	document['explain'] = gpt3_completion(prompt, temperature=0.85, max_tokens=256).strip("\n")
 	return document
 
+@model
+def support(document, template_file="support"):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+
+	# call weaviate with document.plain
+	for distance in range(0, 10):
+		intents = weaviate_query({"concepts": document.get('plain')}, "Support", float(distance / 10.0))
+		if len(intents) > 6:
+			break
+
+	_intents = []
+	for intent in intents:
+		intent.pop('_additional')
+		_intents.append(intent)
+
+	# print(_intents)
+	# document['intents'] = _intents
+ 
+	# print(document)
+
+	template = load_template(template_file)
+	prompt = template.substitute({"author": document.get('author'), "plain": document.get('plain'), "intents": _intents})
+
+	# print(prompt)
+
+	document['explain'] = gpt3_completion(prompt, temperature=0.85, max_tokens=256).strip("\n")
+	return document
+
 
 # uses templates in templates directory
 # set template using document key "template_file"

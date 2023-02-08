@@ -28,7 +28,7 @@ def random_string(size=6, chars=string.ascii_letters + string.digits):
 
 # discord intents
 intents = discord.Intents.default()
-# intents.message_content = True
+intents.message_content = True
 client = discord.Client(intents=intents)
 
 # discord log
@@ -47,22 +47,22 @@ async def on_ready():
 	# show reboot of bot
 	channel = client.get_channel(1067446497253265410)
 
-	# test FeatureBase connection
-	_tables = featurebase_tables_string()
+	# # test FeatureBase connection
+	# _tables = featurebase_tables_string()
 
 	await channel.send("-")
 
-	if not _tables:
-		await channel.send("Couldn't query FeatureBase for tables.")
-	else:
-		await channel.send("%s tables availabe via FeatureBase: %s" % (len(_tables.split(",")), _tables))
+	# if not _tables:
+	# 	await channel.send("Couldn't query FeatureBase for tables.")
+	# else:
+	# 	await channel.send("%s tables availabe via FeatureBase: %s" % (len(_tables.split(",")), _tables))
 
 	# connect to weaviate and ensure schema exists
 	try:
 		weaviate_client = weaviate.Client("http://localhost:8080")
 
 		# Need to reset Weaviate?
-		# weaviate_client.schema.delete_all()
+		weaviate_client.schema.delete_all()
 
 		# make schemas if none found
 		if not weaviate_client.schema.contains():
@@ -136,6 +136,22 @@ async def on_message(message):
 	if message.author == client.user:
 		return
 
+	print(message)
+	if message.content.lower().startswith("support "):
+		# create document
+		document = {
+			"plain": message.content,
+			"author": message.author.name
+		}
+  
+		url = ai("support", document)
+		await message.channel.send(document.get('explain'))
+
+		weaviate_update(document, "Support")
+  
+		return
+
+
 	# stop bot from interactions in most channels
 	# use #offtopic and #bot-dev only
 	# allows op to interact everywhere
@@ -165,14 +181,11 @@ async def on_message(message):
 			use_chart = False
 
 		intent_document = {
-			"author": message.author.name,
+			"author": document.get('author'),
 			"plain": document.get('plain'),
-			"explain": document.get('explain'),
-			"sql": document.get('sql'),
-			"table": document.get('table'),
-			"display_type": document.get('display_type')				
+			"explain": document.get('explain')				
 		} 
-		data_uuid = weaviate_update(intent_document, "Intent")
+		data_uuid = weaviate_update(intent_document, "Support")
 		await message.channel.send("Document inserted into Weaviate with uuid: %s" % data_uuid)
 
 	except:

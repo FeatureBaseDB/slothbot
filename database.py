@@ -175,7 +175,7 @@ def weaviate_query(document, collection, distance=0.5):
 	# fetch result and fields
 	result = (
 	  weaviate_client.query
-	  .get(collection, ["plain", "author", "explain", "table", "sql", "display_type"])
+	  .get(collection, ["plain", "author", "explain"])
 	  .with_additional(["certainty", "distance", "id"])
 	  .with_near_text(nearText)
 	  .do()
