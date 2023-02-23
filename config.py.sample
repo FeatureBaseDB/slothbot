@@ -1,10 +1,18 @@
 # config for slothbot
 dev = "True"
 
-# Tokens
+# tokens
 discord_token = ""
 openai_token = ""
 
-# URIs
-weaviate_url = "http://localhost:8080"
+# weaviate
+weaviate_ip = "xx.xx.xx.xx"
+weaviate_user = "weaviate"
+weaviate_password = "f00bar"
+weaviate_url = "http://%s:%s@%s:8088" % (weaviate_user, weaviate_password, weaviate_ip)
+
+# featurebase
 featurebase_url = "http://localhost:10101"
+
+# channels
+support_channel_ids = [xx, xx]

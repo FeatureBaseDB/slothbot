@@ -1,5 +1,101 @@
 # reference code
 
+		# refactor
+		# run until we get SQL, or an explaination/answer
+		if document.get('is_sql', False) != False:
+			document = featurebase_query(document)
+
+			if document.get('data', []) != []:
+				table_name = document.get('table')
+				table = featurebase_tables(table_name)[0]
+
+				_field_names = []
+				for field in table.get('fields'):
+					_field_names.append(field.get('name'))
+
+				pretty_table = PrettyTable()
+				pretty_table.field_names = _field_names
+
+				for entry in document.get('data'):
+					pretty_table.add_row(entry)
+
+				table_string = "```\n%s\n```" % pretty_table
+				await channel.send(document.get('explain'))
+				await channel.send(document.get('sql'))
+				await channel.send(table_string)
+
+			else:
+				await channel.send("It goes without saying, we have to be here.")
+				await channel.send(document.get('explain'))
+
+
+		# printing
+		thetoken = config.print_token
+		thebody = {
+			"file_name": filename,
+			"url": url
+		}
+		headers = {'Authorization': "Bearer %s" % thetoken}
+
+		response = requests.get("https://api.printify.com/v1/catalog/blueprints/1151.json", headers=headers)
+		# print(response.text)
+		response = requests.get("https://api.printify.com/v1/shops.json", headers=headers)
+		# print(response.text)
+
+		response = requests.get("https://api.printify.com/v1/catalog/blueprints/1151/print_providers.json", data=json.dumps(thebody), headers=headers)
+
+		response = requests.post("https://api.printify.com/v1/uploads/images.json", data=json.dumps(thebody), headers=headers)
+		theid = json.loads(response.text).get('id')
+		
+		response = requests.get("https://api.printify.com/v1/catalog/blueprints/1151/print_providers/59/variants.json", data=json.dumps(thebody), headers=headers)
+		
+
+		thebody = {
+			"title": "Product",
+			"description": "Good product",
+			"blueprint_id": 1151,
+			"print_provider_id": 59,
+			"variants": [
+				{
+					"id": 96176,
+					"title": "11oz / Black",
+					"options": {
+						"size": "11oz",
+						"color": "Black"
+					},
+					"placeholders": [
+						{
+							"position": "front",
+							"height": 1211,
+							"width": 2538
+						}
+					]
+				}
+			],
+			"print_areas": [
+				{
+					"variant_ids": [96176],
+					"placeholders": [
+						{
+							"position": "front",
+							"images": [
+								{
+									"id": "%s" % theid,
+									"x": 0.5, 
+									"y": 0.5,
+									"scale": 1,
+									"angle": 0
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+
+		response = requests.post("https://api.printify.com/v1/shops/7321641/products.json", data=json.dumps(thebody), headers=headers)
+		
+
 answer_dict = ai("sql", document)
 
 document = {**document, **answer_dict}

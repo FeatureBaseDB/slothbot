@@ -5,24 +5,29 @@ import pprint
 from database import weaviate_query
 
 client = weaviate.Client(
-    url="http://localhost:8080",
+    url=config.weaviate_url,
     additional_headers={
         "X-OpenAI-Api-Key": config.openai_token
     }
 )
+query = input("enter query: ")
 
-
-#all_objects = client.data_object.get(class_name="Intent")
+#all_objects = client.data_object.get(class_name="FeatureBase")
 #print(all_objects)
+#import sys
+#sys.exit()
 
-for distance in range(0, 10):
-	intents = weaviate_query({"concepts": "planets"}, "Intent", float(distance/10))
+schema = client.schema.get()
+for classe in schema.get('classes'):
+	print(classe.get('class'))
 
-	if len(intents) > 6:
-		break
+document = {"plain": query}
+collection = "FeatureBase"
+fields = ["author", "plain", "explain", "sql", "table"]
+records = weaviate_query(document, collection, fields)
 
-pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(intents)
+pp = pprint.PrettyPrinter(indent=2)
+pp.pprint(records)
 
 """
 for doc in documents:

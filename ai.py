@@ -2,13 +2,15 @@ import os
 import sys
 import datetime
 import random
+import string
+
 import openai
 
 import traceback
 
 from string import Template
 
-from database import weaviate_query
+from database import weaviate_query, featurebase_tables_schema
 
 import config
 
@@ -39,7 +41,7 @@ def ai(model_name="none", document={}):
 		if config.dev == "True":
 			print(traceback.format_exc())
 
-		document['error'] = "model %s errors with no token." % (model_name)
+		document['error'] = "model *%s* errors with %s." % (model_name, ex)
 		document['explain'] = "I encountered an error talking with my AI handler."
 		document['template_file'] = "eject_document"
 		return document
@@ -65,6 +67,11 @@ def load_template(name="default"):
 	return template
 
 
+# random strings
+def random_string(size=6, chars=string.ascii_letters + string.digits):
+	return ''.join(random.choice(chars) for _ in range(size))
+
+
 # gpt3 dense vectors
 def gpt3_embedding(content, engine='text-similarity-ada-001'):
 	content = content.encode(encoding='ASCII',errors='ignore').decode()
@@ -84,7 +91,8 @@ def gpt3_completion(prompt, temperature=0.95, max_tokens=256, top_p=1, fp=0, pp=
 		  max_tokens = max_tokens,
 		  top_p = top_p,
 		  frequency_penalty = fp,
-		  presence_penalty = pp
+		  presence_penalty = pp,
+		  timeout = 20
 		)
 
 		answer = response['choices'][0]['text']
@@ -105,7 +113,7 @@ def dream(document):
 	document.pop('openai_token', None)
 	
 	response = openai.Image.create(
-	    prompt=document.get('plain').strip("dream "),
+	    prompt=document.get('plain'),
 	    n=1,
 	    size="256x256",
 	)
@@ -113,23 +121,6 @@ def dream(document):
 	url = response["data"][0]["url"]
 	
 	return url
-
-
-# not in use
-@model
-def help(document, template_file="help"):
-	# load openai key then drop it from the document
-	openai.api_key = document.get('openai_token')
-	document.pop('openai_token', None)
-
-	template = load_template(template_file)
-
-	# no substitutions for this template, yet
-	prompt = template.substitute(document)
-
-	document['explain'] = gpt3_completion(prompt, temperature=0.85, max_tokens=256).strip("\n")
-	return document
-
 
 # uses templates in templates directory
 # set template using document key "template_file"
@@ -141,26 +132,34 @@ def query(document):
 	document.pop('openai_token', None)
 
 	# get the template file to use
-	template_file = document.get('template_file', "determine_intent")
+	template_file = document.get('template_file', "query")
 
-	# random number for ids
-	document['random'] = int(random.random()*1000000000)
-	for distance in range(0, 10):
-		intents = weaviate_query({"concepts": [document.get('plain')]}, "Intent", float(distance/10))
+	# random string for ids
+	document['random_id'] = random_string(6)
 
-		if len(intents) > 5:
+	# move this to the query
+	hints = weaviate_query(
+		document,
+		"FeatureBase",
+		["author", "plain", "explain", "sql", "table", "display_type"]
+	)
+
+	# top 10 hints
+	_hints = ""
+	for index, hint in enumerate(hints):
+		if index < 5:
+			hint.pop('_additional')
+			if hint.get('sql') not in _hints and hint.get('explain') not in _hints:
+				_hints = _hints + hint.get('explain') + ": " + hint.get('sql') + "\n"
+		else:
 			break
 
-	_intents = []
-	for intent in intents:
-		intent.pop('_additional')
-		_intents.append(intent)
-
-	document['intents'] = _intents
+	document['sql_samples'] = _hints
 
 	# substitute things
 	template = load_template(template_file)
 	prompt = template.substitute(document)
+	print(prompt)
 
 	# ask GPT-3 for an answer
 	answer = gpt3_completion(prompt)
@@ -178,20 +177,104 @@ def query(document):
 		print("=============EVAL==============")
 		print(exc_type, exc_obj, exc_tb)
 		print(ex)
+		print(prompt)
 		print(answer)
 		print("===============================")
 		if not document.get('explain', None):
 			document['explain'] = "I had problems returning a valid response."
 
 		document['error'] = ex
-	
-		document['is_sql'] = False
 		document['template_file'] = "eject_document"
 
 	return document
 
+@model
+def which_database(document):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
 
-# not in use, yet
+	# get the template file to use
+	template_file = document.get('template_file', "which_database")
+	
+	# substitute things
+	template = load_template(template_file)
+	prompt = template.substitute(document)
+
+	# ask GPT-3 for an answer
+	answer = gpt3_completion(prompt)
+
+	try:
+		# prepend the completion with a dictionary {
+		answer_dict = eval('{"table": "%s' % (answer.strip("\n").strip(" ").replace("\n", "")))
+		document = {**document, **answer_dict}
+
+	# we failed to eval
+	except Exception as ex:
+		# bad sql
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		print("=============EVAL==============")
+		print(exc_type, exc_obj, exc_tb)
+		print(ex)
+		print(prompt)
+		print(answer)
+		print("===============================")
+		document = {}
+
+	return document
+
+
+# not in use
+@model
+def support(document, template_file="support"):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+
+	template = load_template(template_file)
+
+	# no substitutions for this template, yet
+	prompt = template.substitute(document)
+
+	document['explain'] = gpt3_completion(prompt, temperature=0.85, max_tokens=256).strip("\n")
+	return document
+
+
+@model
+def meh(document, template_file="meh"):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+
+	template = load_template(template_file)
+
+	# no substitutions for this template, yet
+	prompt = template.substitute(document)
+
+	document['explain'] = gpt3_completion(prompt, temperature=0.85, max_tokens=256).strip("\n")
+	return document
+
+@model
+def process_sql(document):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+
+	template_file = document.get('template_file', "sql_process")
+
+	# get the schema
+	document["schema"] = featurebase_tables_schema(document.get('table'))
+	document["id"] = "12345"
+
+	# substitute things
+	template = load_template(template_file)
+	prompt = template.substitute(document)
+	print(prompt)
+	answer = gpt3_completion(prompt)
+	print(answer)
+
+	return document
+
 @model
 def feedback(document, template_file="sql_feedback"):
 	openai.api_key = document.get('openai_token')
