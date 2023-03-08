@@ -6,3 +6,4 @@ pandas==1.5.3
 weaviate-client==3.11.0
 plotly==5.13.0
 randomwords==0.4.0
+Flask-BasicAuth==0.2.0

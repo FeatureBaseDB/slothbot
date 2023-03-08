@@ -1,15 +1,34 @@
 # config for slothbot
 dev = "True"
 
-# user/pass for Flask
-basic_auth_username = 'slothbot'
-basic_auth_password = 'password'
-
 # Tokens
 discord_token = ""
 openai_token = ""
 
-# URIs
-weaviate_url = "http://localhost:8080"
+# weaviate
+weaviate_ip = "xx.xx.xx.xx"
+weaviate_user = "weaviate"
+weaviate_password = "f00bar"
+weaviate_url = "http://%s:%s@%s:8088" % (weaviate_user, weaviate_password, weaviate_ip)
+weaviate_classes = ["Support", "FeatureBase"]
+
+# featurebase
 featurebase_url = "http://localhost:10101"
 
+# endpoint url
+endpoints_url = "http://localhost:8000"
+basic_auth_username = "slothbot"
+basic_auth_password = "password"
+
+# printing
+print_token = ""
+
+# channels
+support_channel_ids = []
+allowed_channel_ids = []
+
+# admins
+admins = []
+
+# commands
+commands = ["support", "query", "graph", "dream", "status"]

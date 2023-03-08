@@ -10,7 +10,8 @@ import traceback
 
 from string import Template
 
-from database import weaviate_query, featurebase_tables_schema
+from lib.database import weaviate_schema, weaviate_query, weaviate_update
+from lib.database import featurebase_tables_schema
 
 import config
 
@@ -54,7 +55,7 @@ def ai(model_name="none", document={}):
 def load_template(name="default"):
 	# file path
 	lib_path = os.path.dirname(__file__)
-	file_path = "templates/%s.txt" % name
+	file_path = "%s/templates/%s.txt" % (lib_path, name)
 
 	try:
 		with open(file_path, 'r') as f:
@@ -105,6 +106,81 @@ def gpt3_completion(prompt, temperature=0.95, max_tokens=256, top_p=1, fp=0, pp=
 # model functions
 # ===============
 
+# chat mode
+@model
+def chat(document):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+
+	# memories
+	schema = weaviate_schema("memories")
+	uuid = weaviate_update(document, "memories")
+
+	entries = weaviate_query(document, "Memories", ["plain"])
+	print("===============")
+	print(uuid)
+	print(schema)
+	print(entries)
+	print("===============")
+
+	document['history'] = ""
+	for entry in entries:
+		document['history'] = document['history'] + entry.get('plain') + "\n"
+
+	# substitute things
+	template = load_template("chat")
+	prompt = template.substitute(document)
+	print(prompt)
+	answer = gpt3_completion(prompt)
+	document['answer'] = answer
+	return document
+
+# help mode
+@model
+def help(document):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+
+	# substitute things
+	template = load_template("help")
+	prompt = template.substitute(document)
+
+	answer = gpt3_completion(prompt).strip('\n').strip('"')
+	document['answer'] = answer
+	return document
+
+# help mode
+@model
+def support(document):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+
+	fields = ["title", "url", "sentence"]
+	results = weaviate_query(document, "Support", fields)
+
+	urls = ""
+	texts = ""
+
+	for result in results:
+		if result.get('url') not in urls:
+			urls = urls + result.get('url') + "\n"
+		if result.get('sentence') not in texts:
+			texts = texts + result.get('sentence')
+
+	document['support_urls'] = urls
+	document['support_texts'] = texts[:1500]
+	
+	# substitute things
+	template = load_template("support")
+	prompt = template.substitute(document)
+
+	answer = gpt3_completion(prompt).strip('\n').strip('"')
+	document['answer'] = answer
+	return document
+
 # dream an image
 @model
 def dream(document):
@@ -118,9 +194,9 @@ def dream(document):
 	    size="256x256",
 	)
 
-	url = response["data"][0]["url"]
+	document['answer'] = response["data"][0]["url"]
 	
-	return url
+	return document
 
 # uses templates in templates directory
 # set template using document key "template_file"

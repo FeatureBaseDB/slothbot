@@ -32,3 +32,5 @@ Change into the scripts directory:
 
 
 ### Discord
+
+### AI Endpoint Handler

@@ -1,10 +1,15 @@
 import os
 import json
+import time
 
-from flask import Flask, render_template
+from flask import Flask, render_template, make_response, request
 from flask_basicauth import BasicAuth
 
+from lib.ai import ai
+
 import config
+
+from lib.database import featurebase_tables_schema
 
 # slothbot services app
 app = Flask(__name__)
@@ -14,21 +19,64 @@ app.config['BASIC_AUTH_PASSWORD'] = config.basic_auth_password
 # add basic auth to endpoints
 basic_auth = BasicAuth(app)
 
-@app.route('/chat')
+@app.route('/chat', methods=['POST'])
 @basic_auth.required
 def chat():
-	import openai
+	document = request.json
+	document = ai("chat", document)
+	return make_response(document)
 
-
-	print(completion)
-	return completion
-	
-@app.route('/status')
-
-@app.route('/secret')
+@app.route('/help', methods=['POST'])
 @basic_auth.required
-def secret_view():
-    return render_template('secret.html')
+def help():
+	document = request.json
+	document = ai("help", document)
+	return make_response(document)
+
+@app.route('/dream', methods=['POST'])
+@basic_auth.required
+def dream():
+	document = request.json
+	ai("dream", document)
+	return make_response(document)
+
+@app.route('/support', methods=['POST'])
+@basic_auth.required
+def support():
+	document = request.json
+	ai("support", document)
+	return make_response(document)
+
+@app.route('/query', methods=['POST'])
+@basic_auth.required
+def query():
+	document = request.json
+	return make_response(document)
+	
+@app.route('/status', methods=['POST'])
+@basic_auth.required
+def status():
+	document = request.json
+	return make_response(document)
+
+@app.route('/graph', methods=['POST'])
+@basic_auth.required
+def graph():
+	document = request.json
+	document['answer'] = "I would generate a graph from SQL."
+	return make_response(document)
+
+@app.route('/log', methods=['POST'])
+@basic_auth.required
+def log():
+	document = request.json
+	return make_response(document)
+
+@app.route('/feedback', methods=['POST'])
+@basic_auth.required
+def feedback():
+	document = request.json
+	return make_response(document)
 
 if __name__ == '__main__':
 	# This is used when running locally.

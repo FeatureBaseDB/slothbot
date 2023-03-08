@@ -1,3 +1,4 @@
+import os
 import sys
 import weaviate
 import random
@@ -171,11 +172,32 @@ def featurebase_query(document):
 # Weaviate #
 ############
 
-# connect to weaviate
-weaviate_client = weaviate.Client(config.weaviate_url)
+def weaviate_schema(schema="memories"):
+	# connect to weaviate and ensure schema exists
+	try:
+		weaviate_client = weaviate.Client(config.weaviate_url)
+		#weaviate_client.schema.delete_all()
+		return weaviate_client.schema.get(schema)
+	
+	except Exception as ex:
+		print(ex)
+		try:
+			# show vector database connection error
+			dir_path = os.path.dirname(os.path.realpath(__file__))
+			schema_file = os.path.join(dir_path, "schema/%s.json" % schema)
+			weaviate_client.schema.create(schema_file)
+			return weaviate_client.schema.get(schema)
+		except Exception as ex:
+			print(ex)
+			return {"error": "no schema"}
+
 
 # query weaviate for matches
 def weaviate_query(document, collection, fields):
+	# connect to weaviate
+	weaviate_client = weaviate.Client(config.weaviate_url)
+	print(fields)
+
 	nearText = {
 	  "concepts": [document.get('plain')]
 	  #"distance": distance,
@@ -205,12 +227,10 @@ def weaviate_query(document, collection, fields):
 
 # send a document to a class/collection
 def weaviate_update(document, collection):
-	try:
-		data_uuid = weaviate_client.data_object.create(document, collection)
+	# connect to weaviate
+	weaviate_client = weaviate.Client(config.weaviate_url)
 
-	except Exception as ex:
-		print(ex)
-		data_uuid = False
+	data_uuid = weaviate_client.data_object.create(document, collection)
 
 	return data_uuid
 
