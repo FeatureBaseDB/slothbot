@@ -1,22 +1,36 @@
 import weaviate
 import config
+import pprint
 
-from database import weaviate_query
+from lib.database import weaviate_query
 
 client = weaviate.Client(
-    url="http://localhost:8080",
+    url=config.weaviate_url,
     additional_headers={
         "X-OpenAI-Api-Key": config.openai_token
     }
 )
+query = input("enter query: ")
 
-
-all_objects = client.data_object.get(class_name="History")
+"""
+all_objects = client.data_object.get(class_name="Support")
 print(all_objects)
 
+import sys
+sys.exit()
 
-result = weaviate_query({"concepts": "select all from planets"}, "History", 0.3)
-print(result)
+schema = client.schema.get()
+for classe in schema.get('classes'):
+	print(classe.get('class'))
+"""
+
+document = {"plain": query}
+collection = "Docs"
+fields = ["url", "title", "sentence"]
+records = weaviate_query(document, collection, fields)
+
+pp = pprint.PrettyPrinter(indent=2)
+pp.pprint(records)
 
 """
 for doc in documents:

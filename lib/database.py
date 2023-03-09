@@ -1,3 +1,4 @@
+import os
 import sys
 import weaviate
 import random
@@ -112,6 +113,14 @@ def featurebase_tables_string(table_name=None):
 	
 	return _table_string.strip(",").strip(" ")
 
+def featurebase_table_id(document):
+	table = document.get("table", None)
+
+	try:
+		query = "SELECT max()"
+	except:
+		pass
+	return
 
 # query featurebase by document
 # "sql" key in document should have a valid query
@@ -119,40 +128,42 @@ def featurebase_query(document):
 	# try to run the query
 	try:
 		query = document.get("sql")
+
 		result = requests.post(
-			url,
+			config.featurebase_url+"/sql",
 			data=query.encode('utf-8'),
 			headers={'Content-Type': 'text/plain'}
 		).json()
+		print("=============")
 		print(result)
+		print("=============")
 	except Exception as ex:
 		# bad query?
 		exc_type, exc_obj, exc_tb = sys.exc_info()
+		print("=============")
 		print(exc_type, exc_obj, exc_tb)
-		
+		print("=============")
 		document['explain'] = "(╯°□°)╯︵ ┻━┻"
 		document['error'] = "%s: %s" % (exc_tb.tb_lineno, ex)
 		document.pop('template_file', None)
-		document['is_sql'] = 'False'
+
 		return document
 
 	if result.get('error', ""):
 		# featurebase reports and error
 		document['explain'] = "Error returned by FeatureBase: %s" % result.get('error')
 		document['error'] = result.get('error')
-		document['is_sql'] = 'False'
+		document['data'] = result.get('data')
 		document['template_file'] = "handle_error"
 
 	elif result.get('data', []):
 		# got some data back from featurebase
 		document['data'] = result.get('data')
+		document['schema'] = result.get('schema')
 		document['template_file'] = "process_response"
 	
 	else:
-		print(result)
-		document['error'] = "No useful information was returned."
-		document['is_sql'] = 'False'
-		document['explain'] = "(╯°□°)╯︵ ┻━┻"
+		document['explain'] = "Query was successful, but returned no data."
 		document['template_file'] = "eject_document" # forces the document flow to stop
 	
 	return document
@@ -161,38 +172,88 @@ def featurebase_query(document):
 # Weaviate #
 ############
 
-# connect to weaviate
-weaviate_client = weaviate.Client(config.weaviate_url)
+def weaviate_schema(schema="memories"):
+	# connect to weaviate and ensure schema exists
+	try:
+		weaviate_client = weaviate.Client(config.weaviate_url)
+		return weaviate_client.schema.get(schema)
+	
+	except Exception as ex:
+		print(ex)
+		try:
+			# show vector database connection error
+			dir_path = os.path.dirname(os.path.realpath(__file__))
+			schema_file = os.path.join(dir_path, "schema/%s.json" % schema)
+			weaviate_client.schema.create(schema_file)
+			return weaviate_client.schema.get(schema)
+		except Exception as ex:
+			print(ex)
+			return {"error": "no schema"}
+
+def weaviate_delete_schema(collection):
+	weaviate_client = weaviate.Client(config.weaviate_url)
+
+	if collection == "force_all":
+		weaviate_client.schema.delete_all()
+	else:
+		try:
+			weaviate_client.schema.delete_class(collection)
+		except Exception as ex:
+			print(ex)
+
+	return
 
 # query weaviate for matches
-def weaviate_query(document, collection, distance=0.5):
+def weaviate_query(concepts, collection, fields):
+	# connect to weaviate
+	weaviate_client = weaviate.Client(config.weaviate_url)
+
 	nearText = {
-	  "concepts": document.get('concepts'),
-	  "distance": distance,
+	  "concepts": concepts,
+	  "moveAwayFrom": {
+	  	"concepts": "All rights reserved table of contents next steps copyright",
+	  	"force": 2.0
+	  }
+	  #"distance": distance,
 	}
 
 	# fetch result and fields
 	result = (
 	  weaviate_client.query
-	  .get(collection, ["plain","author", "explain","chart_type","table_to_use"])
+	  .get(collection, fields)
 	  .with_additional(["certainty", "distance", "id"])
 	  .with_near_text(nearText)
 	  .do()
 	)
 
-	for record in result.get('data').get('Get').get(collection):
-		print(record.get('_additional').get('certainty'), "|", record.get('_additional').get('distance'), "|", record.get('table'), "|", record.get('sql'))
+	_records = []
 
-	return
+	try:
+		results = result.get('data').get('Get').get(collection)
+		for record in results:
+			_records.append(record)
+
+	except Exception as ex:
+		print("likely no records for %s" % collection)
+		print(ex)
+
+	return _records
 
 # send a document to a class/collection
 def weaviate_update(document, collection):
-	try:
-		data_uuid = weaviate_client.data_object.create(document, collection)
+	# connect to weaviate
+	weaviate_client = weaviate.Client(config.weaviate_url)
 
-	except Exception as ex:
-		print(ex)
-		data_uuid = False
+	data_uuid = weaviate_client.data_object.create(document, collection)
 
 	return data_uuid
+
+# delete a document from weaviate
+def weaviate_delete_document(uuid, collection):
+	try:
+		weaviate_client.data_object.delete(uuid, collection)
+	except Exception as ex:
+		print(ex)
+
+	return
 

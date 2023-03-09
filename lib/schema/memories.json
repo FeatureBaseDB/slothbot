@@ -1,0 +1,90 @@
+{"classes": [
+    {
+        "class": "Memories",
+        "vectorIndexConfig": {
+            "vectorCacheMaxObjects": 100000,
+            "ef": 2500
+        },
+        "moduleConfig": {
+            "text2vec-openai": {
+                "model": "ada",
+                "modelVersion": "002",
+                "type": "text"
+            }
+        },
+        "properties": [
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "document_id",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "int"
+                ],
+                "name": "message_id",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": true,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "plain",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "command",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "author",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "channel",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            }
+        ]
+    }
+]}

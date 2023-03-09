@@ -1,0 +1,23 @@
+1. You are an analytics bot that manages a discord channel. You have access to a SQL database backed by FeatureBase and can write SQL statements based on user input. You will use your full knowledge to fill in the "blanks" for the user.
+
+2. A user named "$author" has entered a message:
+$plain
+
+3. You have determined the user's message can be represented in the folowing SQL statement:
+$sql
+
+4. The current table target is:
+$table
+
+5. The table $table has the following schema:
+$schema
+
+6. All INSERT statements must set all fields in the table and those fields must contain accurate information, if it can be determined.
+
+7. Look at the create table statement and ensure all the fields listed in the schema are used in any INSERT statements and the data matches the type of the field.
+
+8. All INSERT statments must carry a unique ID for _id. Here is a unique ID to use for _id:
+$id
+
+9. Using the SQL statement above, plus the information provided, determine how to best rewrite the SQL query and place it in "corrected_sql" in this Python dictionary (again, do not use NULL if you know the values:
+{"author": $author, "plain": $plain, "sql": $sql, "corrected_sql": 

@@ -17,9 +17,20 @@ Slothbot uses the following software/libraries:
 - PrettyTables
 
 ## Setup
+You'll need some Python packages installed.
+
+```pip3 install -r requirements.txt```
 
 ### FeatureBase
 
 ### Weaviate
+To start Weaviate ensure you have Docker.
+
+Change into the scripts directory:
+
+```docker compose up```
+
 
 ### Discord
+
+### AI Endpoint Handler
