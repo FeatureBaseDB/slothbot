@@ -32,6 +32,9 @@ for url in urls:
 	soup = BeautifulSoup(html_page, 'html.parser')
 
 	title = soup.find('title').text
+	
+	print("Indexing: %s" % title)
+
 	text = soup.find("div", {"id": "main-content"})
 
 	splits = text.text.split(" ") # split on spaces
@@ -42,7 +45,7 @@ for url in urls:
 		_fulltext = _fulltext + split + " "
 
 		# if we have a long string and a stop character
-		if len(_fulltext) > 108 and (split.endswith(".") or split.endswith('."') or split.endswith("?") or split.endswith("!")):
+		if len(_fulltext) > 208 and (split.endswith(".") or split.endswith('."') or split.endswith("?") or split.endswith("!")):
 			fulltexts.append(_fulltext)
 			_fulltext = ""
 	
@@ -54,4 +57,4 @@ for url in urls:
 			"title": title,
 			"sentence": fulltext.strip(" ")
 		}
-		weaviate_update(document, "Support")
+		weaviate_update(document, "Docs")

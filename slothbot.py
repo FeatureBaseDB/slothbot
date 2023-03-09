@@ -72,20 +72,27 @@ async def on_message(message):
 		return
 
 	# commands
-	command = message.content.lower().strip("!").split(" ")[0]
+	command = message.content.lower().split(" ")[0]
 	if command not in config.commands:
 		command = "chat"
+
+		# return if not allowed general chat in channel
+		if message.channel.id not in config.chat_channel_ids:
+			return
+	else:
+		command = command.strip("!")
 
 	# create a basic document to update as we go
 	document = {
 		"document_id": random_string(13),
 		"message_id": message.id,
-		"plain": message.content,
+		"plain": message.content.strip("!"),
 		"command": command,
 		"author": message.author.name,
 		"channel": message.channel.name
 	}
-	print(document)
+
+	# authenticate
 	url = config.endpoints_url + "/%s" % command
 	auth = aiohttp.BasicAuth(
 		config.basic_auth_username,
@@ -98,11 +105,29 @@ async def on_message(message):
 			async with session.post(url, auth=auth, json=document) as resp:
 				assert resp.status == 200
 				response = await resp.json()
+
 				# print(response)
 				await say(response.get('answer'), message.channel)
 
+				if response.get('url_results', []):
+					for result in response.get('url_results', []):
+						embed = discord.Embed(
+							title = result.get('title', ""),
+							url = result.get('url'), 
+							description = result.get('description'), 
+							color = discord.Color.blue()
+						)
+						try:
+							await typing(message.channel)
+							await message.channel.send(embed = embed)
+						except:
+							pass
+
+				if response.get('example', ""):
+					await say("```%s```" % response.get('example'), message.channel)
+
 	except Exception as ex:
-		await say("My endpoint handlers are paused. Standby.", message.channel)
+		await say("My endpoint handlers for !%s are offline. Standby." % command, message.channel)
 		print(ex)
 
 	return

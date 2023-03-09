@@ -1,0 +1,8 @@
+Slothbot Change Log
+
+03/09/23
+* put openai erorr response in payload to return
+* moved !support to !docs
+* implemented embeds for docs pages
+* added link checking for URLs returned by OpenAI
+* checking in code and doing a PR for test deployment to Google Cloud

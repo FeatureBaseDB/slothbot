@@ -40,11 +40,13 @@ def dream():
 	ai("dream", document)
 	return make_response(document)
 
-@app.route('/support', methods=['POST'])
+@app.route('/docs', methods=['POST'])
 @basic_auth.required
-def support():
+def docs():
 	document = request.json
-	ai("support", document)
+
+	# update document with AI inference
+	ai("docs", document)
 	return make_response(document)
 
 @app.route('/query', methods=['POST'])

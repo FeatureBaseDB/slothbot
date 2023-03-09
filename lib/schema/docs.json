@@ -1,6 +1,6 @@
 {"classes": [
     {
-        "class": "Support",
+        "class": "Docs",
         "vectorIndexConfig": {
             "vectorCacheMaxObjects": 100000,
             "ef": 2500

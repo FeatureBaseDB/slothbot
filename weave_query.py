@@ -24,8 +24,8 @@ for classe in schema.get('classes'):
 	print(classe.get('class'))
 """
 
-document = {"sentence": query}
-collection = "Support"
+document = {"plain": query}
+collection = "Docs"
 fields = ["url", "title", "sentence"]
 records = weaviate_query(document, collection, fields)
 

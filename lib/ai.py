@@ -3,12 +3,15 @@ import sys
 import datetime
 import random
 import string
+import requests
 
 import openai
 
 import traceback
 
 from string import Template
+
+from bs4 import BeautifulSoup
 
 from lib.database import weaviate_schema, weaviate_query, weaviate_update
 from lib.database import featurebase_tables_schema
@@ -102,6 +105,20 @@ def gpt3_completion(prompt, temperature=0.95, max_tokens=256, top_p=1, fp=0, pp=
 
 	return answer
 
+def gpt3_dict_completion(prompt, temperature=0.90, max_tokens=256, top_p=1, fp=0, pp=0):
+	answer = gpt3_completion(prompt, temperature, max_tokens, top_p, fp, pp)
+	
+	try:
+		print(answer.replace('\n', ""))
+		python_dict = eval('{%s' % answer.replace('\n', ""))
+	except Exception as ex:
+		python_dict = {}
+		python_dict['error'] = "Call to OpenAI completion failed: %s" % ex
+		python_dict['dict_string'] = answer
+		python_dict['answer'] = "An error occurred talking to OpenAI. Try again in a minute."
+
+	return python_dict
+
 
 # model functions
 # ===============
@@ -153,33 +170,112 @@ def help(document):
 
 # help mode
 @model
-def support(document):
+def docs(document):
 	# load openai key then drop it from the document
 	openai.api_key = document.get('openai_token')
 	document.pop('openai_token', None)
 
-	fields = ["title", "url", "sentence"]
-	results = weaviate_query(document, "Support", fields)
+	fields = ["url", "title", "sentence"]
+	plain = document.get('plain', "")
+	concepts = [plain]
 
-	urls = ""
-	texts = ""
+	results = weaviate_query(concepts, "Docs", fields)
 
-	for result in results:
+	# get a list of URLs and titles
+	urls = []
+	titles = []
+	sentences = [] # first use for description
+
+	for i, result in enumerate(results):
 		if result.get('url') not in urls:
-			urls = urls + result.get('url') + "\n"
-		if result.get('sentence') not in texts:
-			texts = texts + result.get('sentence')
+			urls.append(result.get('url'))
+		if result.get('title') not in titles:
+			titles.append(result.get('title'))
 
-	document['support_urls'] = urls
-	document['support_texts'] = texts[:1500]
+	# 10 max for now
+	document['docs_urls'] = urls[:10]
+	document['docs_titles'] = titles[:10]
+
+	# gather new results + build page info
+	concepts = []
+	for title in document['docs_titles']:
+		concepts.append("%s referencing %s" % (document.get('plain', ""), title))
+
+	# run refined query to weaviate to get relevant sentences for the prompt
+	fields = ["sentence"]	
+	results = weaviate_query(concepts, "Docs", fields)
+
+	texts = ""
+	sentences = []
+	for result in results:
+		if result.get('sentence') not in texts:
+			texts = texts + " " + result.get('sentence')
+		if result.get('sentence') not in sentences:
+			sentences.append(result.get('sentence'))
+
+	document['docs_texts'] = texts[:1500]
 	
+	# replace with text version of URL list
+	document['docs_urls'] = '\n'.join(document.get('docs_urls'))
+
 	# substitute things
-	template = load_template("support")
+	template = load_template("docs")
 	prompt = template.substitute(document)
 
-	answer = gpt3_completion(prompt).strip('\n').strip('"')
-	document['answer'] = answer
+	# query OpenAI
+	answer_dict = gpt3_dict_completion(prompt)
+	document['answer'] = answer_dict.get('answer', "")
+	if answer_dict.get('example') not in ["none", "NONE", "None"]:
+		document['example'] = answer_dict.get('example', "")
+
+	if answer_dict.get('error', ""):
+		print(answer_dict.get('error', ""))
+		print(answer_dict.get('dict_string', ""))
+
+	# build embedding information
+	url_results = []
+
+	for url in answer_dict.get('urls',[]):
+		res = requests.get(url)
+		html_page = res.content
+		if res.status_code == 200:
+			try:
+				soup = BeautifulSoup(html_page, 'html.parser')
+				title = soup.find('title').text
+			except:
+				title = "No title"
+
+			# query weaviate one more time for a "description" of the page
+			concepts = "%s %s" % (url, title)
+			fields = ["sentence"]
+			results = weaviate_query(concepts, "Docs", fields)
+	
+			if results:
+				description = "Signup for FeatureBase Cloud today!"
+				for result in results:
+					if len(result.get('sentence', "")) > 50:
+						description = result.get('sentence', "")[:210]
+						for letter in result.get('sentence', "")[210:]:
+								if letter != " ":
+									description = description + letter
+								else:
+									break
+						break
+			else:
+				description = "No description provided."
+
+			url_results.append(
+				{
+					"url": url, 
+					"title": "%s 🚀" % title,
+					"description": "%s..." % description
+				}
+			)
+
+	document['url_results'] = url_results
+
 	return document
+
 
 # dream an image
 @model
@@ -235,7 +331,6 @@ def query(document):
 	# substitute things
 	template = load_template(template_file)
 	prompt = template.substitute(document)
-	print(prompt)
 
 	# ask GPT-3 for an answer
 	answer = gpt3_completion(prompt)
