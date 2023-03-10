@@ -1,0 +1,20 @@
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+events {
+        worker_connections 768;
+        # multi_accept on;
+}
+http {
+        upstream weaviate {
+                server localhost:8080;
+        }
+        server {
+                listen  8088;
+                location / {
+                        auth_basic "weaviate";
+                        auth_basic_user_file /etc/nginx/htpasswd;
+                        proxy_pass http://weaviate/;
+                }
+        }
+}
