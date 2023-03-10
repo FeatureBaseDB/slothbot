@@ -173,9 +173,16 @@ def featurebase_query(document):
 ############
 
 def weaviate_schema(schema="memories"):
+	# connect to weaviate
+	weaviate_client = weaviate.Client(
+		url = config.weaviate_url,
+		additional_headers = {
+			"X-OpenAI-Api-Key": config.openai_token
+		}
+	)
+
 	# connect to weaviate and ensure schema exists
 	try:
-		weaviate_client = weaviate.Client(config.weaviate_url)
 		return weaviate_client.schema.get(schema)
 	
 	except Exception as ex:
@@ -191,7 +198,13 @@ def weaviate_schema(schema="memories"):
 			return {"error": "no schema"}
 
 def weaviate_delete_schema(collection):
-	weaviate_client = weaviate.Client(config.weaviate_url)
+	# connect to weaviate
+	weaviate_client = weaviate.Client(
+		url = config.weaviate_url,
+		additional_headers = {
+			"X-OpenAI-Api-Key": config.openai_token
+		}
+	)
 
 	if collection == "force_all":
 		weaviate_client.schema.delete_all()
@@ -206,7 +219,12 @@ def weaviate_delete_schema(collection):
 # query weaviate for matches
 def weaviate_query(concepts, collection, fields):
 	# connect to weaviate
-	weaviate_client = weaviate.Client(config.weaviate_url)
+	weaviate_client = weaviate.Client(
+		url = config.weaviate_url,
+		additional_headers = {
+			"X-OpenAI-Api-Key": config.openai_token
+		}
+	)
 
 	nearText = {
 	  "concepts": concepts,
@@ -235,14 +253,20 @@ def weaviate_query(concepts, collection, fields):
 
 	except Exception as ex:
 		print("likely no records for %s" % collection)
+		print("================")
 		print(ex)
-
+		print("================")
 	return _records
 
 # send a document to a class/collection
 def weaviate_update(document, collection):
 	# connect to weaviate
-	weaviate_client = weaviate.Client(config.weaviate_url)
+	weaviate_client = weaviate.Client(
+		url = config.weaviate_url,
+		additional_headers = {
+			"X-OpenAI-Api-Key": config.openai_token
+		}
+	)
 
 	data_uuid = weaviate_client.data_object.create(document, collection)
 
@@ -250,6 +274,14 @@ def weaviate_update(document, collection):
 
 # delete a document from weaviate
 def weaviate_delete_document(uuid, collection):
+	# connect to weaviate
+	weaviate_client = weaviate.Client(
+		url = config.weaviate_url,
+		additional_headers = {
+			"X-OpenAI-Api-Key": config.openai_token
+		}
+	)
+
 	try:
 		weaviate_client.data_object.delete(uuid, collection)
 	except Exception as ex:

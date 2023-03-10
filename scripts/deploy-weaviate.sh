@@ -43,7 +43,9 @@ SCRIPT=$(cat <<EOF
 #!/bin/bash
 if [ -d "/opt/weaviate/" ]; then
   echo "starting weaviate"
-  # sudo -i -u solr /opt/solr/bin/solr start -m 8192m
+  sleep 10
+  cd /root/
+  /root/start-weaviate.sh
 else
   sudo su -
   date >> /opt/start.time

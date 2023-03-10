@@ -271,7 +271,8 @@ def docs(document):
 					"description": "%s..." % description
 				}
 			)
-
+		res.close()
+		
 	document['url_results'] = url_results
 
 	return document
