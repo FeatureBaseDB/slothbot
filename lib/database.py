@@ -186,11 +186,12 @@ def weaviate_schema(schema="memories"):
 		return weaviate_client.schema.get(schema)
 	
 	except Exception as ex:
-		print(ex)
+		print("Couldn't get the %s schema.\nError was: %s" % (schema, ex))
 		try:
 			# show vector database connection error
 			dir_path = os.path.dirname(os.path.realpath(__file__))
 			schema_file = os.path.join(dir_path, "schema/%s.json" % schema)
+			print(schema_file)
 			weaviate_client.schema.create(schema_file)
 			return weaviate_client.schema.get(schema)
 		except Exception as ex:
@@ -261,6 +262,8 @@ def weaviate_query(concepts, collection, fields):
 # send a document to a class/collection
 def weaviate_update(document, collection):
 	# connect to weaviate
+	print("+++++++++++++")
+	print(config.openai_token)
 	weaviate_client = weaviate.Client(
 		url = config.weaviate_url,
 		additional_headers = {
