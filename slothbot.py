@@ -37,7 +37,8 @@ async def upload(file_handle, file_name, channel):
 async def on_ready():
 	# show reboot of bot
 	channel = client.get_channel(1067446497253265410)
-	await channel.send("-")
+	emoji = ["🤣", "🐌", "🐾", "🐨", "💤", "🐼", "🤔", "🐰", "🐻", "🌿","🌼"]
+	await channel.send(random.choice(emoji))
 
 	return
 
@@ -73,11 +74,18 @@ async def on_message(message):
 
 	# commands
 	command = message.content.lower().split(" ")[0]
+
+	# yann bot
+	if message.channel.id in config.yann_bot_channel_ids:
+		command = "!yann"
+
+	# check if in commands
 	if command not in config.commands:
 		command = "chat"
 
 		# return if not allowed general chat in channel
 		if message.channel.id not in config.chat_channel_ids:
+			print("returning")
 			return
 	else:
 		command = command.strip("!")
@@ -91,7 +99,7 @@ async def on_message(message):
 		"author": message.author.name,
 		"channel": message.channel.name
 	}
-
+	print(document)
 	# authenticate
 	url = config.endpoints_url + "/%s" % command
 	auth = aiohttp.BasicAuth(
@@ -109,6 +117,7 @@ async def on_message(message):
 				# print(response)
 				await say(response.get('answer'), message.channel)
 
+				# modulate on different response types
 				if response.get('url_results', []):
 					for result in response.get('url_results', []):
 						embed = discord.Embed(
@@ -123,8 +132,8 @@ async def on_message(message):
 						except:
 							pass
 
-				if response.get('example', ""):
-					await say("```%s```" % response.get('example'), message.channel)
+				if response.get('code'):
+					await say("```%s```" % response.get('code'), message.channel)
 
 	except Exception as ex:
 		await say("My endpoint handlers for !%s are offline. Standby." % command, message.channel)

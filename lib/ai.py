@@ -84,6 +84,23 @@ def gpt3_embedding(content, engine='text-similarity-ada-001'):
 	return vector
 
 
+# gptchat
+def gpt_chat(words):
+	try:
+		completion = openai.ChatCompletion.create(
+		  model="gpt-3.5-turbo",
+		  messages = [
+		    {"role": "user", "content": words},
+		    {"role": "assistant", "content": "I will restate what you said as closely as possible without using escape or special characters:"}
+		  ]
+		)
+		answer = completion.choices[0].message
+	except Exception as ex:
+		answer = "Call to OpenAI chat failed: %s" % ex
+
+	return answer
+
+
 # completion
 def gpt3_completion(prompt, temperature=0.95, max_tokens=256, top_p=1, fp=0, pp=0):
 	try:
@@ -122,6 +139,38 @@ def gpt3_dict_completion(prompt, temperature=0.90, max_tokens=256, top_p=1, fp=0
 
 # model functions
 # ===============
+
+@model
+def chat_cleanup(document):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+	document['answer'] = gpt_chat(document.get('words')).get('content', "")
+
+	return document
+
+@model
+def yann(document):
+	# load openai key then drop it from the document
+	openai.api_key = document.get('openai_token')
+	document.pop('openai_token', None)
+
+	# lookup yann's doc
+	entries = weaviate_query([document.get('plain')], "Document", ["fragment", "gpt_fragment"])
+	
+	document['content'] = ""
+	for i, entry in enumerate(entries):
+		document['content'] = document['content'] + entry.get('gpt_fragment') + "\n"
+		if i > 10:
+			break
+			
+	template = load_template("yann")
+	prompt = template.substitute(document)
+	print(prompt)
+
+	answer = gpt3_completion(prompt)
+	document['answer'] = answer
+	return document
 
 # chat mode
 @model
@@ -224,9 +273,11 @@ def docs(document):
 
 	# query OpenAI
 	answer_dict = gpt3_dict_completion(prompt)
+
 	document['answer'] = answer_dict.get('answer', "")
-	if answer_dict.get('example') not in ["none", "NONE", "None"]:
-		document['example'] = answer_dict.get('example', "")
+
+	if answer_dict.get('code') not in ["none", "NONE", "None"]:
+		document['code'] = answer_dict.get('code')
 
 	if answer_dict.get('error', ""):
 		print(answer_dict.get('error', ""))
@@ -235,6 +286,7 @@ def docs(document):
 	# build embedding information
 	url_results = []
 
+	# loop over and check URLs returned
 	for url in answer_dict.get('urls',[]):
 		res = requests.get(url)
 		html_page = res.content
@@ -272,7 +324,7 @@ def docs(document):
 				}
 			)
 		res.close()
-		
+
 	document['url_results'] = url_results
 
 	return document

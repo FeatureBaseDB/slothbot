@@ -63,8 +63,8 @@ else
   snap install docker
 
   cd /opt/
-  git clone https://github.com/kordless/mitta-services.git
-  cd /opt/mitta-services/weaviate/
+  git clone https://github.com/FeatureBaseDB/slothbot.git
+  cd /opt/slothbot/scripts/
 
   cp docker-compose.yml /root/
   cp start-weaviate.sh /root/

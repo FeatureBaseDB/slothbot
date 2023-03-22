@@ -80,6 +80,13 @@ def feedback():
 	document = request.json
 	return make_response(document)
 
+@app.route('/yann', methods=['POST'])
+@basic_auth.required
+def yann():
+	document = request.json
+	ai("yann", document)
+	return make_response(document)
+
 if __name__ == '__main__':
 	# This is used when running locally.
 	# app.run(host='127.0.0.1', port=8000, debug=True)

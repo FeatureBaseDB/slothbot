@@ -1,0 +1,78 @@
+{"classes": [
+    {
+        "class": "DocsMemories",
+        "vectorIndexConfig": {
+            "vectorCacheMaxObjects": 100000,
+            "ef": 2500
+        },
+        "moduleConfig": {
+            "text2vec-openai": {
+                "model": "ada",
+                "modelVersion": "002",
+                "type": "text"
+            }
+        },
+        "properties": [
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "plain",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "string[]"
+                ],
+                "name": "urls",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": true,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "code",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "answer",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "feedback",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            }
+        ]
+    }
+]}
