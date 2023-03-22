@@ -9,10 +9,10 @@ nltk.download('punkt')
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
 # weavaite schema
-schema = weaviate_schema("document")
+schema = weaviate_schema("quantum")
 
 # creating a pdf file object
-pdfFileObj = open('automachine.pdf', 'rb')
+pdfFileObj = open('quantum.pdf', 'rb')
     
 # creating a pdf reader object 
 pdfReader = PyPDF2.PdfReader(pdfFileObj)
@@ -31,7 +31,7 @@ for page in range(0,num_pages):
 			ai_doc = ai("chat_cleanup", {"words": words})
 
 			document = {
-				"filename": "automachine.pdf",
+				"filename": "quantum.pdf",
 				"gpt_fragment": ai_doc.get('answer'),
 				"fragment": ai_doc.get('words')
 			}
