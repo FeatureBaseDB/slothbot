@@ -1,3 +1,4 @@
+import time
 import sys
 import PyPDF2
 from lib.ai import ai
@@ -29,14 +30,16 @@ for page in range(0,num_pages):
 		words = words + " " + entry.replace("\n", " ")
 		if (i % 3) == 0:
 			ai_doc = ai("chat_cleanup", {"words": words})
-
+			time.sleep(2)
 			document = {
 				"filename": "quantum.pdf",
 				"gpt_fragment": ai_doc.get('answer'),
 				"fragment": ai_doc.get('words')
 			}
-			print(weaviate_update(document, "Document"))
-
+			try:
+				print(weaviate_update(document, "Quantum"))
+			except:
+				time.sleep(10)
 			print("==================")
 			print(document)
 			words = ""

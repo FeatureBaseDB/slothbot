@@ -25,6 +25,7 @@ model = lambda f: models.setdefault(f.__name__, f)
 def ai(model_name="none", document={}):
 	# get the user's API token	
 	openai_token = config.openai_token
+	print("AI in")
 
 	if not openai_token:
 		# rewrite to match document flow
@@ -88,10 +89,9 @@ def gpt3_embedding(content, engine='text-similarity-ada-001'):
 def gpt_chat(words):
 	try:
 		completion = openai.ChatCompletion.create(
-		  model="gpt-3.5-turbo",
+		  model="gpt-3.5-turbo-0301",
 		  messages = [
-		    {"role": "user", "content": words},
-		    {"role": "assistant", "content": "I will restate what you said as closely as possible without using escape or special characters:"}
+		    {"role": "user", "content": words}
 		  ]
 		)
 		answer = completion.choices[0].message
@@ -140,36 +140,14 @@ def gpt3_dict_completion(prompt, temperature=0.90, max_tokens=256, top_p=1, fp=0
 # model functions
 # ===============
 
+# mirror text for indexing
 @model
-def chat_cleanup(document):
+def mirror(document):
 	# load openai key then drop it from the document
 	openai.api_key = document.get('openai_token')
 	document.pop('openai_token', None)
 	document['answer'] = gpt_chat(document.get('words')).get('content', "")
 
-	return document
-
-@model
-def yann(document):
-	# load openai key then drop it from the document
-	openai.api_key = document.get('openai_token')
-	document.pop('openai_token', None)
-
-	# lookup yann's doc
-	entries = weaviate_query([document.get('plain')], "Document", ["fragment", "gpt_fragment"])
-	
-	document['content'] = ""
-	for i, entry in enumerate(entries):
-		document['content'] = document['content'] + entry.get('gpt_fragment') + "\n"
-		if i > 10:
-			break
-			
-	template = load_template("yann")
-	prompt = template.substitute(document)
-	print(prompt)
-
-	answer = gpt3_completion(prompt)
-	document['answer'] = answer
 	return document
 
 # chat mode
@@ -190,9 +168,11 @@ def chat(document):
 	print(entries)
 	print("===============")
 
-	document['history'] = ""
-	for entry in entries:
-		document['history'] = document['history'] + entry.get('plain') + "\n"
+	document['content'] = ""
+	for i, entry in enumerate(entries):
+		document['content'] = document['content'] + entry.get('gpt_fragment') + "\n"
+		if i > 10:
+			break
 
 	# substitute things
 	template = load_template("chat")

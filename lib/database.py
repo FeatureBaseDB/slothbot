@@ -262,8 +262,6 @@ def weaviate_query(concepts, collection, fields):
 # send a document to a class/collection
 def weaviate_update(document, collection):
 	# connect to weaviate
-	print("+++++++++++++")
-	print(config.openai_token)
 	weaviate_client = weaviate.Client(
 		url = config.weaviate_url,
 		additional_headers = {

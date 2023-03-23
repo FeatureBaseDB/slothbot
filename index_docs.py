@@ -1,11 +1,18 @@
 import sys
+import time
 import requests
+
 from bs4 import BeautifulSoup
+import nltk
 
 from lib.database import weaviate_schema, weaviate_update
+from lib.ai import ai
+
+nltk.download('punkt')
+tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
 # weavaite schema
-schema = weaviate_schema("support")
+schema = weaviate_schema("docs")
 
 # get the sitemap and load it
 sitemap = "https://docs.featurebase.com/sitemap.xml"
@@ -37,6 +44,59 @@ for url in urls:
 
 	text = soup.find("div", {"id": "main-content"})
 
+	words = ""
+	previous_words = ""
+	for i, entry in enumerate(tokenizer.tokenize(text.text)):
+		print(i)
+		words = words + " " + entry.replace("\n", " ")
+
+		if (i % 3) == 0:
+			# ai_doc = ai("mirror", {"words": words})
+
+			document = {
+				"sentence": words,
+				"url": url,
+				"title": title
+			}
+
+			print("==================")
+			print(document)
+
+			for x in range(10):
+				try:
+					print(weaviate_update(document, "Docs"))
+					break
+				except Exception as ex:
+					print("%s - sleeping 10 seconds for retry" % ex)
+					time.sleep(10)
+			print("==================")
+			words = ""
+
+	if words != "":
+		# ai_doc = ai("mirror", {"words": words})
+
+		document = {
+			"sentence": words,
+			"url": url,
+			"title": title
+		}
+
+		print("==================")
+		print(document)
+
+		for x in range(10):
+			try:
+				print(weaviate_update(document, "Docs"))
+				break
+			except Exception as ex:
+				print("%s - sleeping 10 seconds for retry" % ex)
+				time.sleep(10)
+		print("==================")
+
+sys.exit()
+
+"""
+
 	splits = text.text.split(" ") # split on spaces
 
 	fulltexts = []
@@ -58,3 +118,4 @@ for url in urls:
 			"sentence": fulltext.strip(" ")
 		}
 		weaviate_update(document, "Docs")
+"""
