@@ -1,4 +1,5 @@
 # requirements
+flask==2.2.2
 discord==1.7.3
 openai==0.27.2
 prettytable==3.6.0
@@ -8,3 +9,4 @@ plotly==5.13.0
 randomwords==0.4.0
 Flask-BasicAuth==0.2.0
 nltk==3.8.1
+
