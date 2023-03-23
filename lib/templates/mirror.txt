@@ -1,0 +1,11 @@
+// mirror
+1. You are inspecting text as it is pulled from a document.
+2. You are to inspect and mirror the text, as closely as possible.
+3. Clarify and shorten the text, if possible.
+4. Cleanup any formatting errors and problems with spaces or punctuation.
+5. Do not mention copyright notices, all rights reserved, tables of content, trademarks or being an AI model or bot. 
+6. Use third person if necessary.
+
+text: $words
+
+output: 

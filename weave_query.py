@@ -34,25 +34,25 @@ additional_setting = {
 
 query_result = (
   client.query
-  .get("Document", ["fragment", "gpt_fragment"])
+  .get("Quantum", ["fragment", "gpt_fragment"])
   .with_near_text(near_text_filter)
   .with_additional(
     (additional_clause, additional_setting)
   )
   .do()
 )
+datas = query_result.get('data').get('Get').get('Quantum')
 
-datas = query_result.get('data').get('Get').get('Document')
 content = ""
 for i, data in enumerate(datas):
 	content = content + " " + data.get('gpt_fragment')
 	
 	if i > 10:
 		document = {"plain": query, "content": content}
-		print(document)
-		print(ai("prime_chat", document).get('answer', "None"))
+		print(ai("quantum", document).get('answer', "None"))
 		break
 
+print("ending interaction")
 sys.exit()
 
 xs = []

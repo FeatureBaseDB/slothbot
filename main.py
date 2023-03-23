@@ -19,13 +19,6 @@ app.config['BASIC_AUTH_PASSWORD'] = config.basic_auth_password
 # add basic auth to endpoints
 basic_auth = BasicAuth(app)
 
-@app.route('/chat', methods=['POST'])
-@basic_auth.required
-def chat():
-	document = request.json
-	document = ai("chat", document)
-	return make_response(document)
-
 @app.route('/help', methods=['POST'])
 @basic_auth.required
 def help():
@@ -78,13 +71,6 @@ def log():
 @basic_auth.required
 def feedback():
 	document = request.json
-	return make_response(document)
-
-@app.route('/yann', methods=['POST'])
-@basic_auth.required
-def yann():
-	document = request.json
-	ai("yann", document)
 	return make_response(document)
 
 if __name__ == '__main__':

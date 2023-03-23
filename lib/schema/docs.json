@@ -20,7 +20,7 @@
                 "name": "url",
                 "moduleConfig": {
                     "text2vec-openai": {
-                        "skip": false,
+                        "skip": true,
                         "vectorizePropertyName": false
                     }
                 }
@@ -42,6 +42,18 @@
                     "string"
                 ],
                 "name": "sentence",
+                "moduleConfig": {
+                    "text2vec-openai": {
+                        "skip": false,
+                        "vectorizePropertyName": false
+                    }
+                }
+            },
+            {
+                "dataType": [
+                    "string"
+                ],
+                "name": "gpt_sentence",
                 "moduleConfig": {
                     "text2vec-openai": {
                         "skip": false,
