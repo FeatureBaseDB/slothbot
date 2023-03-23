@@ -36,14 +36,14 @@ if [ -d "/opt/slothbot/" ]; then
   echo "starting slothbot"
   sleep 10
   cd /opt/slothbot/
-  ./scripts/start-slothbot.sh
+  /opt/scripts/start-slothbot.sh
 else
   sudo su -
   date >> /opt/start.time
   apt-get update -y
 
   apt-get install unzip -y
-  apt-get install python3-pip
+  apt-get install python3-pip -y
 
   #entropy
   apt-get -y install rng-tools

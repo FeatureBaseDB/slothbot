@@ -42,7 +42,7 @@ else
   apt-get update -y
 
   apt-get install unzip -y
-  apt-get install python3-pip
+  apt-get install python3-pip -y
 
   #entropy
   apt-get -y install rng-tools
